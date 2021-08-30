@@ -10,5 +10,5 @@ Sample input:
 Sample output:
 
 (user) is in:
-FLEX: GOLD IV 23 LP - 251 wins / 230 losses 
+FLEX: GOLD IV 23 LP - 251 wins / 230 losses \n
 SOLO: GOLD V 0 LP - 123 wins / 123 losses
