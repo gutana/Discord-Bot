@@ -1,11 +1,16 @@
 const fs = require('fs');
+const Discord = require('discord.js');
+const client = new Discord.Client({ intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS']}); 
+const fetch = require('node-fetch');
+const { get } = require('http');
 
 class Bot 
 {    
     constructor() {
         this.version = "0.0.1";
         this.lastUpdated = "June 30, 2022";
-        this.getValContent();
+        // this.getValContent(); Use this to get the Act/Episode ID. 
+        this.ActID =  "79f9d00f-433a-85d6-dfc3-60aef115e699";
     };   
 
     getDiscKey() {
@@ -14,8 +19,7 @@ class Bot
                 console.error(err);        
             } else {
                 this.discAPIKey = data;
-                console.log("Discord API key read: " + this.discAPIKey);
-            };
+            }
         });
         return this.discAPIKey;
     }
@@ -27,7 +31,7 @@ class Bot
             } else {
                 this.valAPIKey = data;
                 console.log("Valorant API key read: " + this.valAPIKey);
-            };
+            }
         });
         return this.valAPIKey;
     }
@@ -36,7 +40,9 @@ class Bot
         var headers = {
                 "X-Riot-Token": this.getValKey()
         };
-        this.valContent = await fetch("https://na.api.riotgames.com/val/content/v1/contents", {method: 'GET', headers: headers});
+        var resp = await fetch("https://na.api.riotgames.com/val/content/v1/contents", {method: 'GET', headers: headers});
+        this.valContentJSON = await resp.json();
+        console.log(await this.valContentJSON["acts"]);
     }
 
     helpCommand(msg) {
@@ -112,11 +118,6 @@ class Bot
         }
     };
 }
-
-const Discord = require('discord.js');
-const client = new Discord.Client({ intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS']}); 
-const fetch = require('node-fetch');
-const { get } = require('http');
 
 let valBot = new Bot();
 
