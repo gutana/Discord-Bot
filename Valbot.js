@@ -1,90 +1,60 @@
-const fs = require('fs');
 const Discord = require('discord.js');
 const client = new Discord.Client({ intents: ['DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILDS']}); 
+
+const fs = require('fs');
 const fetch = require('node-fetch');
-const { get } = require('http');
+
+/*
+TODO:
+    - Be able to sign up a player, get their name and tagline, and convert
+        that into a puuid 
+    - With puuid in hand, can look up the match. 
+*/
 
 class Bot 
 {    
     constructor() {
         this.version = "0.0.1";
         this.lastUpdated = "June 30, 2022";
-        // this.getValContent(); Use this to get the Act/Episode ID. 
+        //this.getValContent(); // Use this to get the Act/Episode ID. 
         this.ActID =  "79f9d00f-433a-85d6-dfc3-60aef115e699";
+
+        let keys = new Object();
+
+        this.getKeyFromFile('keys/disc.key')
+        .then((key) => {
+            client.login(key);
+        });
     };   
 
-    getDiscKey() {
-        this.discAPIKey = fs.readFileSync('keys/disc.key', 'utf-8', (err, data) => {
-            if (err) {
-                console.error(err);        
-            } else {
-                this.discAPIKey = data;
-            }
-        });
-        return this.discAPIKey;
-    }
-
-    getValKey() {
-        this.valAPIKey = fs.readFileSync('keys/val.key', 'utf-8', (err, data) => {
-            if (err) {
-                console.error(err);
-            } else {
-                this.valAPIKey = data;
-                console.log("Valorant API key read: " + this.valAPIKey);
-            }
-        });
-        return this.valAPIKey;
+    async getKeyFromFile(path) {
+        if (this.keys) {
+            return this.keys[path];
+        } else {
+            return await fs.readFileSync(path, 'utf-8', (err, data) => {
+                if (err) {
+                    console.error(err);
+                } else {
+                    this.keys[path] = data;
+                    console.log("API key read from " + path + ": " + this.keys[path]);
+                }
+            });
+        }
     }
 
     async getValContent() {
-        var headers = {
-                "X-Riot-Token": this.getValKey()
-        };
+        var headers; 
+        let token = await this.getKeyFromFile('keys/val.key')
+        .then((token) => {
+            headers = { "X-Riot-Token": token  };
+        })
         var resp = await fetch("https://na.api.riotgames.com/val/content/v1/contents", {method: 'GET', headers: headers});
         this.valContentJSON = await resp.json();
-        console.log(await this.valContentJSON["acts"]);
     }
 
     helpCommand(msg) {
-        msg.channel.send("I am a bot. Currently, my only commands are: \n!help - returns commands and bot info\n!rank <user> - returns all ranked queue standings including promos\n!version - returns bot version\n\nIf you have any questions, or would like to request a feature, contact my master @gutana.")
+        msg.channel.send("I am a bot. Currently, my only commands are: \n!help - returns commands and bot info\n!version - returns bot version\n\nIf you have any questions, or would like to request a feature, contact my master @gutana.")
         msg.react("😂");
-    };
-
-    async rankCommand(msg, args) {
-        let rank;
-
-        let sumName = args[0];
-
-        if (args[1]) {
-            sumName += "_";
-            sumName += args[1];
-            if (args[2]) {
-                sumName += "_";
-                sumName += args[2]; 
-            }
-        }
-
-        if (!sumName) {
-            msg.channel.send(msg.author + " To use this command, provide a summoner name. Ex: '!rank doublelift' \nPlease note that this is only available for NA at the moment")
-            return; 
-        }
-
-        console.log(sumName + " requested rank.")
-
-        if (sumName != "me") {
-            rank = await this.getRank(sumName, msg);
-        
-            if (await rank) {
-                msg.channel.send(rank)
-            }
-        }
-
-        setTimeout(function () {
-            if (!rank) {
-                msg.channel.send("Sorry, " + msg.author + ", something is wrong with the name you provided or rito is experiencing difficulties.")
-                console.error(`Error finding rank for ${sumName}`)
-            }
-        }, 5000);
     };
 
     versionCommand(msg) {
@@ -96,36 +66,32 @@ class Bot
     };
 
     processCommand(msg) {
-        let fullCommand = msg.content.substr(1)
-        let splitCommand = fullCommand.split(" ")
-        let primaryCommand = splitCommand[0]
-        let args = splitCommand.slice(1)
-    
+        let fullCommand = msg.content.substr(1); // Splices off the '!'
+        let splitCommand = fullCommand.split(" ");
+        let primaryCommand = splitCommand[0]; // The first word after the '!'
+        let args = splitCommand.slice(1);     // Everything else 
     
         switch (primaryCommand) {
             case "help":
                 this.helpCommand(msg)
                 break
-            case "rank":
-                this.rankCommand(msg, args)
-                break
             case "version":
                 this.versionCommand(msg)
                 break
             default:
-                msg.channel.send("I'm not sure what you're trying to say, " + msg.author.username + 
-                    "\nFor a full list of commands, type '!help'.") 
+                if (primaryCommand) {
+                    msg.channel.send("I'm not sure what you're trying to say, " + msg.author.username + "\nFor a full list of commands, type '!help'.");
+                }
+                console.log("Unable to process command: \"" + msg.content + "\" by " + msg.author.username);
         }
     };
 }
 
 let valBot = new Bot();
 
-client.on('ready', () => {
+client.on('ready', () => { // the client logs in inside the Bot constructor, and then this is called
     console.log("Logged in as " + client.user.tag);
 });
-
-client.login(valBot.getDiscKey()); 
 
 client.on('messageCreate', (msg) => {
     if (msg.author == client.user) { return; }
