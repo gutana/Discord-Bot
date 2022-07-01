@@ -14,12 +14,10 @@ TODO:
 class Bot 
 {    
     constructor() {
-        this.version = "0.0.1";
-        this.lastUpdated = "June 30, 2022";
-        //this.getValContent(); // Use this to get the Act/Episode ID. 
+        this.version = "0.0.2";
+        this.lastUpdated = "July 1, 2022";
+        this.getValContent(); // Use this to get the Act/Episode ID. 
         this.ActID =  "79f9d00f-433a-85d6-dfc3-60aef115e699";
-
-        let keys = new Object();
 
         this.getKeyFromFile('keys/disc.key')
         .then((key) => {
@@ -28,18 +26,7 @@ class Bot
     };   
 
     async getKeyFromFile(path) {
-        if (this.keys) {
-            return this.keys[path];
-        } else {
-            return await fs.readFileSync(path, 'utf-8', (err, data) => {
-                if (err) {
-                    console.error(err);
-                } else {
-                    this.keys[path] = data;
-                    console.log("API key read from " + path + ": " + this.keys[path]);
-                }
-            });
-        }
+        return await fs.readFileSync(path, 'utf-8');
     }
 
     async getValContent() {
